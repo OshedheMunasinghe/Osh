@@ -26,21 +26,36 @@ fun ListContent(
     tasks: List<ToDoTask>,
     navigateToTaskScreen: (taskId: Int) -> Unit
 ) {
-    LazyColumn {
-    items(
-        items = tasks,
-        key = {
-            task -> task.id
-        }
-
-    ){ task ->
-//        * This one does dynamically add the task
-        TaskItem(
-            toDoTask = task,
-            navigateToTaskScreen = navigateToTaskScreen
-        )
-
+//    * If Task is empty then show user it is empty
+    if (tasks.isEmpty()) {
+        EmptyContent()
+    } else {
+        DisplayTask(tasks = tasks, navigateToTaskScreen = navigateToTaskScreen)
     }
+
+}
+
+@ExperimentalMaterialApi
+@Composable
+fun DisplayTask(
+    tasks: List<ToDoTask>,
+    navigateToTaskScreen: (taskId: Int) -> Unit
+) {
+    LazyColumn {
+        items(
+            items = tasks,
+            key = { task ->
+                task.id
+            }
+
+        ) { task ->
+//        * This one does dynamically add the task
+            TaskItem(
+                toDoTask = task,
+                navigateToTaskScreen = navigateToTaskScreen
+            )
+
+        }
     }
 }
 
@@ -84,8 +99,7 @@ fun TaskItem(
                 ) {
                     Canvas(
                         modifier = Modifier
-                                .width(PRIORITY_INDICATOR_SIZE)
-                                .height(PRIORITY_INDICATOR_SIZE)
+                                .size(PRIORITY_INDICATOR_SIZE)
                     ) {
                         drawCircle(color = toDoTask.priority.color)
                     }
@@ -117,7 +131,7 @@ fun TaskItemPreview() {
     TaskItem(toDoTask = ToDoTask(
         0,
         "Title",
-        "Sluta räser bajsa",
+        "Remember to go out shopping",
         Priority.HIGH
     ), navigateToTaskScreen = {})
 }
