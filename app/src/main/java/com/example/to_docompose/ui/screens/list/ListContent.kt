@@ -19,19 +19,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.to_docompose.data.models.Priority
+import com.example.to_docompose.util.RequestState
 
 @ExperimentalMaterialApi
 @Composable
 fun ListContent(
-    tasks: List<ToDoTask>,
+    tasks: RequestState<List<ToDoTask>>,
     navigateToTaskScreen: (taskId: Int) -> Unit
 ) {
 //    * If Task is empty then show user it is empty
-    if (tasks.isEmpty()) {
-        EmptyContent()
-    } else {
-        DisplayTask(tasks = tasks, navigateToTaskScreen = navigateToTaskScreen)
-    }
+  if(tasks is RequestState.Sucess){
+      if (tasks.data.isEmpty()) {
+          EmptyContent()
+      } else {
+          DisplayTask(tasks = tasks.data, navigateToTaskScreen = navigateToTaskScreen)
+      }
+  }
 
 }
 
