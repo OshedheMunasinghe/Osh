@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 navController = rememberNavController()
                 SetupNavigation(
                     navController = navController,
-                    sharedViewModel = sharedViewModel
+                    sharedViewModel = sharedViewModel //think this is the one that shares all data
                 )
             }
         }
