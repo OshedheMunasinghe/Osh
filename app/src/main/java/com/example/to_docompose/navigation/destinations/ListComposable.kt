@@ -3,10 +3,11 @@ package com.example.to_docompose.navigation.destinations
 import android.util.Log
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navArgument
+import androidx.navigation.navArgument
 import com.example.to_docompose.ui.screens.list.ListScreen
 import com.example.to_docompose.ui.viewmodels.SharedViewModel
 import com.example.to_docompose.util.Constants.LIST_ARGUMENT_KEY
@@ -26,13 +27,17 @@ fun NavGraphBuilder.listComposable(
     ) { navBackStackEntry ->
         val action = navBackStackEntry.arguments?.getString(LIST_ARGUMENT_KEY).toAction() //because we made string and we want to convert to enum - action is made in enum!
 
+
         LaunchedEffect(key1 = action){
             sharedViewModel.action.value = action
         }
 
+        val databaseAction by sharedViewModel.action
+
         ListScreen(
             navigateToTaskScreen = navigateToTaskScreen,
-            sharedViewModel = sharedViewModel
+            sharedViewModel = sharedViewModel,
+            action = databaseAction,
         )
     }
 }

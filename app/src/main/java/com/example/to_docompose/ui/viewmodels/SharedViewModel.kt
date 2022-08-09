@@ -2,6 +2,7 @@ package com.example.to_docompose.ui.viewmodels
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.datastore.dataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.to_docompose.data.models.Priority
@@ -12,8 +13,8 @@ import com.example.to_docompose.util.Constants.MAX_TITLE_LENGTH
 import com.example.to_docompose.util.RequestState
 import com.example.to_docompose.util.SearchAppBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
@@ -36,13 +37,69 @@ class SharedViewModel @Inject constructor(
         mutableStateOf(SearchAppBarState.CLOSED)
     val searchTextState: MutableState<String> = mutableStateOf("")
 
-    //    * This is to read Database
+    //    * This is to read Database -
+    //    ! UPDATE MOVED UP HERE FROM VIDEO 59!!
     private val _allTasks =
         MutableStateFlow<RequestState<List<ToDoTask>>>(RequestState.Idle)
     val allTasks: StateFlow<RequestState<List<ToDoTask>>> = _allTasks
 
+    private val _searchedTasks =
+        MutableStateFlow<RequestState<List<ToDoTask>>>(RequestState.Idle)
+    val searchedTasks: StateFlow<RequestState<List<ToDoTask>>> = _searchedTasks
+
+    /*
+  TODO UNDO THIS BLOCK!!! FUTURE I AM HERE
+
+  private val _sortState = MutableStateFlow<RequestState<Priority>>(RequestState.Idle)
+   val sortState: StateFlow<RequestState<Priority>> = _sortState
+  */
+
+    init {
+        getAllTasks()
+        // readSortState() TODO: ListScreen gammal launchEffect är deprecated så du måste avmarkera denna!!
+    }
+
+
+
+  /*
+  TODO UNDO ME HERE TOO!
+
+   private fun readSortState() {
+        _sortState.value = RequestState.Loading
+        try {
+            viewModelScope.launch {
+                dataStoreRepository.readSortState
+                        .map { Priority.valueOf(it) }
+                        .collect {
+                            _sortState.value = RequestState.Success(it)
+                        }
+            }
+        } catch (e: Exception) {
+            _sortState.value = RequestState.Error(e)
+        }
+    }*/
+
+
+
+    fun searchDatabase(searchQuery: String) {
+        _searchedTasks.value = RequestState.Loading
+        try {
+            viewModelScope.launch {
+                repository.searchDatabase(searchQuery = "%$searchQuery%").collect { searchedTasks ->
+                    _searchedTasks.value = RequestState.Sucess(searchedTasks)
+                }
+            }
+
+
+        } catch (e: Exception) {
+            _searchedTasks.value = RequestState.Error(e)
+        }
+        searchAppBarState.value = SearchAppBarState.TRIGGERED
+    }
+
+
     //    * This is to read Database
-    fun getAllTasks() {
+    private fun getAllTasks() {
         _allTasks.value = RequestState.Loading
         try {
             viewModelScope.launch {
@@ -91,9 +148,10 @@ class SharedViewModel @Inject constructor(
             )
             repository.addTask(toDoTask = toDoTask)
         }
+        searchAppBarState.value = SearchAppBarState.CLOSED
     }
 
-    private fun updateTask(){
+    private fun updateTask() {
         viewModelScope.launch(Dispatchers.IO) {
             val toDoTask = ToDoTask(
                 id = id.value,
@@ -117,6 +175,12 @@ class SharedViewModel @Inject constructor(
         }
     }
 
+    private fun deleteAllTasks() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteAllTasks()
+        }
+    }
+
     fun handleDatabaseActions(action: Action) {
         when (action) {
             Action.ADD -> {
@@ -129,16 +193,17 @@ class SharedViewModel @Inject constructor(
                 deleteTask()
             }
             Action.DELETE_ALL -> {
+                deleteAllTasks()
             }
             Action.UNDO -> {
                 addTask()
-            } else -> {
+            }
+            else -> {
 
             }
         }
-        this.action.value = Action.NO_ACTION
-    }
 
+    }
 
 
     fun updateTitle(newTitle: String) {

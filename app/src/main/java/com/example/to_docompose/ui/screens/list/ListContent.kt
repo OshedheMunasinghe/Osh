@@ -7,7 +7,6 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,21 +19,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.to_docompose.data.models.Priority
 import com.example.to_docompose.util.RequestState
+import com.example.to_docompose.util.SearchAppBarState
 
 @ExperimentalMaterialApi
 @Composable
 fun ListContent(
-    tasks: RequestState<List<ToDoTask>>,
-    navigateToTaskScreen: (taskId: Int) -> Unit
+    allTasks: RequestState<List<ToDoTask>>,
+    searchedTasks: RequestState<List<ToDoTask>>,
+    navigateToTaskScreen: (taskId: Int) -> Unit,
+    searchAppBarState: SearchAppBarState,
 ) {
 //    * If Task is empty then show user it is empty
-  if(tasks is RequestState.Sucess){
-      if (tasks.data.isEmpty()) {
-          EmptyContent()
-      } else {
-          DisplayTask(tasks = tasks.data, navigateToTaskScreen = navigateToTaskScreen)
-      }
-  }
+    if (searchAppBarState == SearchAppBarState.TRIGGERED) {
+        if (searchedTasks is RequestState.Sucess) {
+            HandleListContent(
+                tasks = searchedTasks.data,
+                navigateToTaskScreen = navigateToTaskScreen
+            )
+        }
+    } else {
+        if (allTasks is RequestState.Sucess) {
+            HandleListContent(tasks = allTasks.data, navigateToTaskScreen = navigateToTaskScreen)
+        }
+    }
+
+}
+
+@ExperimentalMaterialApi
+@Composable
+fun HandleListContent(
+    tasks: List<ToDoTask>,
+    navigateToTaskScreen: (taskId: Int) -> Unit
+) {
+
+    if (tasks.isEmpty()) {
+        EmptyContent()
+    } else {
+        DisplayTask(tasks = tasks, navigateToTaskScreen = navigateToTaskScreen)
+    }
+
 
 }
 
