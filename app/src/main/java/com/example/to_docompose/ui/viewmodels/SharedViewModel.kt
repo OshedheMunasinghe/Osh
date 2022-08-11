@@ -2,28 +2,26 @@ package com.example.to_docompose.ui.viewmodels
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.datastore.dataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.to_docompose.data.models.Priority
 import com.example.to_docompose.data.models.ToDoTask
 import com.example.to_docompose.data.repositories.ToDoRepository
+import com.example.to_docompose.respositories.DataStoreRepository
 import com.example.to_docompose.util.Action
 import com.example.to_docompose.util.Constants.MAX_TITLE_LENGTH
 import com.example.to_docompose.util.RequestState
 import com.example.to_docompose.util.SearchAppBarState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
-    private val repository: ToDoRepository
+    private val repository: ToDoRepository,
+    private val dataStoreRepository: DataStoreRepository,
 ) : ViewModel() {
 
     val action: MutableState<Action> = mutableStateOf(Action.NO_ACTION)
@@ -37,6 +35,12 @@ class SharedViewModel @Inject constructor(
         mutableStateOf(SearchAppBarState.CLOSED)
     val searchTextState: MutableState<String> = mutableStateOf("")
 
+    fun persistSortState(priority: Priority) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStoreRepository.persistSortState(priority = priority)
+        }
+    }
+
     //    * This is to read Database -
     //    ! UPDATE MOVED UP HERE FROM VIDEO 59!!
     private val _allTasks =
@@ -47,12 +51,40 @@ class SharedViewModel @Inject constructor(
         MutableStateFlow<RequestState<List<ToDoTask>>>(RequestState.Idle)
     val searchedTasks: StateFlow<RequestState<List<ToDoTask>>> = _searchedTasks
 
-    /*
-  TODO UNDO THIS BLOCK!!! FUTURE I AM HERE
 
   private val _sortState = MutableStateFlow<RequestState<Priority>>(RequestState.Idle)
    val sortState: StateFlow<RequestState<Priority>> = _sortState
-  */
+
+    //TODO fixa detta efter video 55
+    fun readSortState() {
+        _sortState.value = RequestState.Loading
+        try {
+            viewModelScope.launch {
+                dataStoreRepository.readSortState
+                        .map { Priority.valueOf(it) }
+                        .collect {
+                            _sortState.value = RequestState.Success(it)
+                        }
+            }
+        } catch (e: Exception) {
+            _sortState.value = RequestState.Error(e)
+        }
+    }
+
+    val lowPriorityTasks: StateFlow<List<ToDoTask>> =
+        repository.sortByLowPriority.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = emptyList()
+        )
+
+    val highPriorityTasks: StateFlow<List<ToDoTask>> =
+        repository.sortByHighPriority.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = emptyList()
+        )
+
 
     init {
         getAllTasks()
@@ -86,7 +118,7 @@ class SharedViewModel @Inject constructor(
         try {
             viewModelScope.launch {
                 repository.searchDatabase(searchQuery = "%$searchQuery%").collect { searchedTasks ->
-                    _searchedTasks.value = RequestState.Sucess(searchedTasks)
+                    _searchedTasks.value = RequestState.Success(searchedTasks)
                 }
             }
 
@@ -104,7 +136,7 @@ class SharedViewModel @Inject constructor(
         try {
             viewModelScope.launch {
                 repository.getAllTasks.collect {
-                    _allTasks.value = RequestState.Sucess(it)
+                    _allTasks.value = RequestState.Success(it)
                 }
             }
 

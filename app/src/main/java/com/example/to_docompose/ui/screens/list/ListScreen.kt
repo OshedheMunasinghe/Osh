@@ -37,6 +37,9 @@ fun ListScreen(
 
     val allTasks by sharedViewModel.allTasks.collectAsState()
     val searchedTasks by sharedViewModel.searchedTasks.collectAsState()
+    val sortState by sharedViewModel.sortState.collectAsState()
+    val lowPriorityTasks by sharedViewModel.lowPriorityTasks.collectAsState()
+    val highPriorityTasks by sharedViewModel.highPriorityTasks.collectAsState()
 
 //    * SEARCHAPPBARSTATE
     val searchAppBarState: SearchAppBarState
@@ -71,6 +74,9 @@ fun ListScreen(
                 navigateToTaskScreen = navigateToTaskScreen,
                 searchAppBarState = searchAppBarState,
                 searchedTasks = searchedTasks,
+                lowPriorityTasks = lowPriorityTasks ,
+                highPriorityTasks = highPriorityTasks ,
+                sortState = sortState,
             )
         },
         floatingActionButton = {
